@@ -93,20 +93,37 @@ resource "aws_route_table_association" "secretlabexercise-route-table-associatio
 resource "aws_iam_role" "secretlabexercise-iam-role-codebuild" {
     name = "secretlabexercise-iam-role"
 
-    assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codebuild.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = "sts:AssumeRole"
+                Effect = "Allow"
+                Sid    = ""
+                Principal = {
+                    Service = "codebuild.amazonaws.com"
+                }
+            },
+        ]
+    })
 }
-EOF
+
+resource "aws_iam_role" "secretlabexercise-iam-role-ecs-execution" {
+    name = "secretlabexercise-iam-role-ecs-execution"
+
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = "sts:AssumeRole"
+                Effect = "Allow"
+                Sid    = ""
+                Principal = {
+                    Service = "ecs.amazonaws.com"
+                }
+            },
+        ]
+    })
 }
 
 # CICD blocks
@@ -156,3 +173,35 @@ resource "aws_ecs_cluster" "secretlabexercise-ecs-cluster" {
         value = "enabled"
     }
 }
+
+resource "aws_ecs_task_definition" "secretlabexercise-ecs-task-definition" {
+    family = "secretlabexercise-ecs-task-definition"
+    requires_compatibilities = [ "FARGATE" ]
+    cpu = 256
+    memory = 512
+    network_mode = "awsvpc"
+    execution_role_arn = aws_iam_role.secretlabexercise-iam-role-ecs-execution.arn
+
+    container_definitions = jsonencode([
+    {
+      name      = "secretlabexercise-ecs-container_definitions"
+      image     = "${aws_ecr_repository.secretlabexercise-ecr.repository_url}:latest"
+      cpu       = 256
+      memory    = 512
+      essential = true
+      portMappings = [
+        {
+          containerPort = 80
+          hostPort      = 80
+        }
+      ]
+    }
+  ])
+
+}
+
+# resource "aws_ecs_service" "secretlabexercise-ecs-service" {
+#     name = "secretlabexercise-ecs-service"
+#     cluster = aws_ecs_cluster.secretlabexercise-ecs-cluster.id
+
+# }
