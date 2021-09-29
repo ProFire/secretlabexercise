@@ -13,3 +13,9 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+
+/build/terraform/.terraform
+/build/terraform/.terraform.lock.hcl
+/build/terraform/terraform.tfstate
+/build/terraform/terraform.tfstate.backup
