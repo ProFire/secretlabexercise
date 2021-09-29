@@ -20,9 +20,9 @@ class ObjectController extends Controller
      * 
      * @param Request $request The request object
      * @param string $name The name of the key to get the value from
-     * @return Response with the latest value from the name
+     * @return JsonResponse with the latest value from the name
      */
-    public function view(Request $request, string $name): Response
+    public function view(Request $request, string $name): JsonResponse
     {
         if ($request->query("timestamp") != "") {
             $item = Item::getLatestBefore($name, $request->query("timestamp"));
@@ -30,7 +30,32 @@ class ObjectController extends Controller
             $item = Item::getLatest($name);
         }
         // /*DEBUG*/ print_r($item);exit;
-        return response("test " . $item->value . " " . $request->query("timestamp"));
+
+        // If no item is found, return 404
+        if (empty($item)) {
+            return response()
+                ->json([
+                    'status' => 404,
+                    'errors' => [
+                        "Object not found",
+                    ],
+                ])
+            ;
+        }
+
+        $value = json_decode($item->value, true);
+        // /*DEBUG*/ var_dump($value);exit;
+
+        if ($value === null) {
+            // JSON decode failed. Value is just plain string, so respond as string
+            return response()
+                ->json($item->value)
+            ;
+        }
+        // Return the decoded JSON as an array
+        return response()
+                ->json($value)
+            ;
     }
 
     /**
@@ -41,7 +66,7 @@ class ObjectController extends Controller
      * @param Request $request The request object
      * @return Response Empty string
      */
-    public function create(Request $request): Response
+    public function create(Request $request): JsonResponse
     {
         // Get the input data
         // /*DEBUG*/ echo "<pre>"; print_r($request->getContent()); echo "</pre>";exit;
@@ -60,7 +85,9 @@ class ObjectController extends Controller
         }
 
 
-        return response("");
+        return response()
+            ->json("")
+        ;
     }
 
     /**
