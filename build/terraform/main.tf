@@ -13,6 +13,7 @@ provider "aws" {
 }
 
 # VPC and Related
+
 resource "aws_vpc" "secretlabexercise-vpc" { 
     cidr_block = "10.0.0.0/16"
     
@@ -24,6 +25,7 @@ resource "aws_vpc" "secretlabexercise-vpc" {
 resource "aws_subnet" "secretlabexercise-subnet-public-a" { 
     vpc_id = aws_vpc.secretlabexercise-vpc.id
     cidr_block = "10.0.0.0/24"
+    availability_zone = "ap-southeast-1a"
 
     tags = {
         Name = "secretlabexercise-subnet-public-a"
@@ -33,6 +35,7 @@ resource "aws_subnet" "secretlabexercise-subnet-public-a" {
 resource "aws_subnet" "secretlabexercise-subnet-public-b" { 
     vpc_id = aws_vpc.secretlabexercise-vpc.id
     cidr_block = "10.0.1.0/24"
+    availability_zone = "ap-southeast-1b"
 
     tags = {
         Name = "secretlabexercise-subnet-public-b"
@@ -42,6 +45,7 @@ resource "aws_subnet" "secretlabexercise-subnet-public-b" {
 resource "aws_subnet" "secretlabexercise-subnet-private-a" { 
     vpc_id = aws_vpc.secretlabexercise-vpc.id
     cidr_block = "10.0.2.0/24"
+    availability_zone = "ap-southeast-1a"
 
     tags = {
         Name = "secretlabexercise-subnet-private-a"
@@ -51,6 +55,7 @@ resource "aws_subnet" "secretlabexercise-subnet-private-a" {
 resource "aws_subnet" "secretlabexercise-subnet-private-b" { 
     vpc_id = aws_vpc.secretlabexercise-vpc.id
     cidr_block = "10.0.3.0/24"
+    availability_zone = "ap-southeast-1b"
 
     tags = {
         Name = "secretlabexercise-subnet-private-b"
@@ -90,6 +95,7 @@ resource "aws_route_table_association" "secretlabexercise-route-table-associatio
 }
 
 # Roles and Policies
+
 resource "aws_iam_role" "secretlabexercise-iam-role-codebuild" {
     name = "secretlabexercise-iam-role"
 
@@ -119,14 +125,34 @@ resource "aws_iam_role" "secretlabexercise-iam-role-ecs-execution" {
                 Effect = "Allow"
                 Sid    = ""
                 Principal = {
-                    Service = "ecs.amazonaws.com"
+                    Service = "ecs.amazonaws.com",
+                    Service = "ecs-tasks.amazonaws.com"
                 }
             },
         ]
     })
 }
 
+resource "aws_iam_role_policy" "sle-iam-role-policy-ecs-execution" {
+    name = "sle-iam-role-policy-ecs-service"
+    role = aws_iam_role.secretlabexercise-iam-role-ecs-execution.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = [
+                    "*",
+                ]
+                Effect = "Allow"
+                Resource = "*"
+            }
+        ]
+    })
+}
+
 # CICD blocks
+
 resource "aws_codestarconnections_connection" "secretlabexercise-codestarconnections-connection" {
     name = "secretlabexercise-connection"
     provider_type = "GitHub"
@@ -165,6 +191,38 @@ resource "aws_codebuild_project" "secretlabexercise-codebuild" {
 }
 
 # Application blocks
+
+resource "aws_security_group" "secretlabexercise-security-group" {
+    name = "secretlabexercise-security-group"
+    vpc_id = aws_vpc.secretlabexercise-vpc.id
+
+    ingress {
+        from_port = 80
+        to_port = 80
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        description = "HTTP"
+    }
+    ingress {
+        from_port = 443
+        to_port = 443
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        description = "HTTPS"
+    }
+    
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+        ipv6_cidr_blocks = ["::/0"]
+        description = "ALL"
+    }
+}
+
 resource "aws_ecs_cluster" "secretlabexercise-ecs-cluster" {
     name = "secretlabexercise-ecs-cluster"
 
@@ -181,10 +239,11 @@ resource "aws_ecs_task_definition" "secretlabexercise-ecs-task-definition" {
     memory = 512
     network_mode = "awsvpc"
     execution_role_arn = aws_iam_role.secretlabexercise-iam-role-ecs-execution.arn
+    task_role_arn = aws_iam_role.secretlabexercise-iam-role-ecs-execution.arn
 
     container_definitions = jsonencode([
     {
-      name      = "secretlabexercise-ecs-container_definitions"
+      name      = "secretlabexercise-ecs-container-definitions"
       image     = "${aws_ecr_repository.secretlabexercise-ecr.repository_url}:latest"
       cpu       = 256
       memory    = 512
@@ -200,8 +259,58 @@ resource "aws_ecs_task_definition" "secretlabexercise-ecs-task-definition" {
 
 }
 
-# resource "aws_ecs_service" "secretlabexercise-ecs-service" {
-#     name = "secretlabexercise-ecs-service"
-#     cluster = aws_ecs_cluster.secretlabexercise-ecs-cluster.id
+resource "aws_ecs_service" "secretlabexercise-ecs-service" {
+    name = "secretlabexercise-ecs-service"
+    cluster = aws_ecs_cluster.secretlabexercise-ecs-cluster.id
+    task_definition = aws_ecs_task_definition.secretlabexercise-ecs-task-definition.arn
+    desired_count = 2
+    launch_type = "FARGATE"
 
-# }
+    depends_on = [
+        aws_lb.secretlabexercise-lb,
+        aws_iam_role_policy.sle-iam-role-policy-ecs-execution
+    ]
+
+    network_configuration {
+      subnets = [aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id]
+      security_groups = [aws_security_group.secretlabexercise-security-group.id]
+    }
+
+    load_balancer {
+      target_group_arn = aws_lb_target_group.secretlabexercise-lb-target-group.arn
+      container_name = "secretlabexercise-ecs-container-definitions"
+      container_port = 80
+    }
+}
+
+resource "aws_lb" "secretlabexercise-lb" {
+    name = "secretlabexercise-lb"
+    internal = false
+    load_balancer_type = "application"
+    security_groups = [aws_security_group.secretlabexercise-security-group.id]
+    subnets = [aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id]
+    enable_deletion_protection = false
+}
+
+resource "aws_lb_listener" "secretlabexercise-lb-listener-http" {
+    load_balancer_arn = aws_lb.secretlabexercise-lb.arn
+    port = 80
+    protocol = "HTTP"
+
+    default_action {
+      type = "forward"
+      target_group_arn = aws_lb_target_group.secretlabexercise-lb-target-group.arn
+    }
+}
+
+resource "aws_lb_target_group" "secretlabexercise-lb-target-group" {
+    name = "secretlabexercise-lb-tg"
+    port = 80
+    protocol = "HTTP"
+    target_type = "ip"
+    vpc_id = aws_vpc.secretlabexercise-vpc.id
+
+    depends_on = [
+        aws_lb.secretlabexercise-lb
+    ]
+}
