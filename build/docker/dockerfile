@@ -14,7 +14,8 @@ ENV RDS_PORT=$RDS_PORT
 
 # Install PHP extensions
 RUN apt install -y \
-    zlib1g
+    zlib1g \
+    libxml2
 RUN docker-php-ext-install xml gd soap zip mysqli pdo pdo_mysql opcache
 
 # Import Laravel Application
