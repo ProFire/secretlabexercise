@@ -14,8 +14,8 @@ ENV RDS_PORT=$RDS_PORT
 
 # Install PHP extensions
 RUN apt install -y \
-    libpng-dev \
-    zlib1g-dev
+    libpng \
+    zlib1g
 RUN docker-php-ext-configure gd \
     --with-jpeg \
     --with-freetype \
