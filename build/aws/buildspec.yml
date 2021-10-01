@@ -13,6 +13,7 @@ phases:
           --build-arg RDS_USERNAME="$RDS_USERNAME" \
           --build-arg RDS_PASSWORD="$RDS_PASSWORD" \
           --build-arg RDS_PORT="$RDS_PORT" \
+          -f build/docker/dockerfile
           -t $IMAGE_REPO_NAME:$IMAGE_TAG .
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
       - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
