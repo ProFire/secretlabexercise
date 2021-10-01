@@ -114,6 +114,60 @@ resource "aws_iam_role" "secretlabexercise-iam-role-codebuild" {
     })
 }
 
+resource "aws_iam_role_policy" "sle-iam-role-policy-codebuild" {
+    name = "sle-iam-role-policy-codebuild"
+    role = aws_iam_role.secretlabexercise-iam-role-codebuild.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = [
+                    "*",
+                ]
+                Effect = "Allow"
+                Resource = "*"
+            }
+        ]
+    })
+}
+
+resource "aws_iam_role" "secretlabexercise-iam-role-codepipeline" {
+    name = "secretlabexercise-iam-role-codepipeline"
+
+    assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = "sts:AssumeRole"
+                Effect = "Allow"
+                Sid    = ""
+                Principal = {
+                    Service = "codepipeline.amazonaws.com"
+                }
+            },
+        ]
+    })
+}
+
+resource "aws_iam_role_policy" "sle-iam-role-policy-codepipeline" {
+    name = "sle-iam-role-policy-codepipeline"
+    role = aws_iam_role.secretlabexercise-iam-role-codepipeline.id
+
+    policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+            {
+                Action = [
+                    "*",
+                ]
+                Effect = "Allow"
+                Resource = "*"
+            }
+        ]
+    })
+}
+
 resource "aws_iam_role" "secretlabexercise-iam-role-ecs-execution" {
     name = "secretlabexercise-iam-role-ecs-execution"
 
@@ -181,13 +235,139 @@ resource "aws_codebuild_project" "secretlabexercise-codebuild" {
             name = "AWS_DEFAULT_REGION"
             value = "ap-southeast-1"
         }
+
+        environment_variable {
+            name  = "AWS_ACCOUNT_ID"
+            value = "191234494660"
+        }
+
+        environment_variable {
+            name  = "IMAGE_REPO_NAME"
+            value = aws_ecr_repository.secretlabexercise-ecr.name
+        }
+
+        environment_variable {
+            name  = "IMAGE_TAG"
+            value = "latest"
+        }
+
+        environment_variable {
+            name  = "ECS_TASK_DEFINITION_NAME"
+            value = aws_ecs_task_definition.secretlabexercise-ecs-task-definition.family
+        }
+
+        environment_variable {
+            name  = "ECS_CONTAINER_DEFINITION_NAME"
+            value = "secretlabexercise-ecs-container-definitions"
+        }
+
+        // RDS config
+
+        environment_variable {
+            name  = "RDS_ENDPOINT"
+            value = aws_db_instance.secretlabexercise-db-instance.address
+        }
+
+        environment_variable {
+            name  = "RDS_USERNAME"
+            value = aws_db_instance.secretlabexercise-db-instance.username
+        }
+
+        environment_variable {
+            name  = "RDS_PASSWORD"
+            value = aws_db_instance.secretlabexercise-db-instance.password
+        }
+
+        environment_variable {
+            name  = "RDS_PORT"
+            value = aws_db_instance.secretlabexercise-db-instance.port
+        }
     }
 
     source {
         type = "GITHUB"
         location = "https://github.com/ProFire/secretlabexercise.git"
         git_clone_depth = 0
+        buildspec = "/build/aws/buildspec.yml"
     }
+
+    vpc_config {
+      security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
+      subnets = [ aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id ]
+      vpc_id = aws_vpc.secretlabexercise-vpc.id
+    }
+}
+
+resource "aws_codepipeline" "secretlabexercise-codepipeline" {
+    name = "secretlabexercise-codepipeline"
+    role_arn = aws_iam_role.secretlabexercise-iam-role-codepipeline.arn
+
+    artifact_store {
+        type = "S3"
+        location = aws_s3_bucket.secretlabexercise-s3-bucket-codepipeline.bucket
+    }
+
+    stage {
+        name = "Source"
+
+        action {
+            name = "Source"
+            category = "Source"
+            owner = "AWS"
+            provider = "CodeStarSourceConnection"
+            version = "1"
+            output_artifacts = ["source_output"]
+
+            configuration = {
+                ConnectionArn = aws_codestarconnections_connection.secretlabexercise-codestarconnections-connection.arn
+                FullRepositoryId = "ProFire/secretlabexercise"
+                BranchName = "main"
+            }
+        }
+    }
+
+    stage {
+        name = "Build"
+
+        action {
+            name = "Build"
+            category = "Build"
+            owner = "AWS"
+            provider = "CodeBuild"
+            input_artifacts = ["source_output"]
+            output_artifacts = ["build_output"]
+            version = "1"
+
+            configuration = {
+                ProjectName = aws_codebuild_project.secretlabexercise-codebuild.name
+            }
+        }
+    }
+
+    stage {
+        name = "Deploy"
+
+        action {
+            name = "Deploy"
+            category = "Deploy"
+            owner = "AWS"
+            provider = "ECS"
+            input_artifacts = ["build_output"]
+            version = "1"
+
+            configuration = {
+                ClusterName = aws_ecs_cluster.secretlabexercise-ecs-cluster.name
+                ServiceName = aws_ecs_service.secretlabexercise-ecs-service.name
+                FileName = "imagedefinitions.json"
+                DeploymentTimeout = "15"
+            }
+        }
+    }
+}
+
+resource "aws_s3_bucket" "secretlabexercise-s3-bucket-codepipeline" {
+    bucket = "secretlabexercise-s3-bucket-codepipeline"
+    acl = "private"
 }
 
 # Application blocks
@@ -313,4 +493,20 @@ resource "aws_lb_target_group" "secretlabexercise-lb-target-group" {
     depends_on = [
         aws_lb.secretlabexercise-lb
     ]
+}
+
+resource "aws_db_instance" "secretlabexercise-db-instance" {
+    allocated_storage = 10
+    engine = "mysql"
+    # engine_version = "5.7.12"
+    instance_class = "db.t3.small"
+    name = "secretlabexercisedbinstance"
+    username = "secretlabexercise"
+    password = "$uper$3cret"
+    db_subnet_group_name = aws_db_subnet_group.secretlabexercise-db-subnet-group.name
+}
+
+resource "aws_db_subnet_group" "secretlabexercise-db-subnet-group" {
+    name = "secretlabexercise-db-subnet-group"
+    subnet_ids = [aws_subnet.secretlabexercise-subnet-private-a.id, aws_subnet.secretlabexercise-subnet-private-b.id]
 }

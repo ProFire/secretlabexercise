@@ -1,0 +1,25 @@
+version: 2.0
+
+phases:
+  install: 
+  pre_build: 
+  build:
+    commands:       
+      - |
+        docker build \
+          --build-arg RDS_ENDPOINT="$RDS_ENDPOINT" \
+          --build-arg RDS_USERNAME="$RDS_USERNAME" \
+          --build-arg RDS_PASSWORD="$RDS_PASSWORD" \
+          --build-arg RDS_PORT="$RDS_PORT" \
+          -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' $ECS_CONTAINER_DEFINITION_NAME $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
