@@ -13,16 +13,6 @@ ARG RDS_PORT=3306
 ENV RDS_PORT=$RDS_PORT
 
 # Install PHP extensions
-RUN apt install -y \
-    libxml2-dev \
-    libpng-dev \
-    zlib1g-dev \
-    libxml2-dev \
-    libzip-dev \
-    libwebp-dev \
-    libjpeg62-turbo-dev \
-    libxpm-dev \
-    libfreetype6-dev
 RUN docker-php-ext-configure gd \
     --with-jpeg \
     --with-freetype \
