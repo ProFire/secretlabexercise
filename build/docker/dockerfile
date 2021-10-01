@@ -1,0 +1,47 @@
+FROM 8.0.11-apache-bullseye
+
+# Set environment variables
+ARG RDS_ENDPOINT=""
+ENV RDS_ENDPOINT=$RDS_ENDPOINT
+ARG RDS_USERNAME=""
+ENV RDS_USERNAME=$RDS_USERNAME
+ARG RDS_PASSWORD=""
+ENV RDS_PASSWORD=$RDS_PASSWORD
+ARG RDS_DATABASE="dss"
+ENV RDS_DATABASE=$RDS_DATABASE
+ARG RDS_PORT=3306
+ENV RDS_PORT=$RDS_PORT
+
+# Install PHP extensions
+RUN apt install -y \
+    libxml2-dev \
+    libpng-dev \
+    zlib1g-dev \
+    libxml2-dev \
+    libzip-dev \
+    libwebp-dev \
+    libjpeg62-turbo-dev \
+    libxpm-dev \
+    libfreetype6-dev
+RUN docker-php-ext-configure gd \
+    --with-jpeg \
+    --with-freetype \
+    --with-webp
+RUN docker-php-ext-install xml gd soap zip mysqli pdo pdo_mysql opcache
+
+# Import Laravel Application
+COPY ./ ./
+COPY .env.example .env
+
+# Install composer
+RUN wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet
+
+# Install app libraries
+RUN composer install -o
+
+# Set File and Folder permissions, and ownership
+RUN chown -R www-data:www-data ./
+RUN chmod -R 755 ./
+    
+EXPOSE 80
+EXPOSE 443
