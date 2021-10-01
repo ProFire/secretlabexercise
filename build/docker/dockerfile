@@ -17,7 +17,7 @@ RUN apt install -y \
     zlib1g \
     libxml2 \
     pkg-config
-RUN docker-php-ext-install soap zip mysqli pdo pdo_mysql opcache
+RUN docker-php-ext-install zip mysqli pdo pdo_mysql opcache
 
 # Import Laravel Application
 COPY ./ ./
