@@ -288,14 +288,18 @@ resource "aws_codebuild_project" "secretlabexercise-codebuild" {
         type = "GITHUB"
         location = "https://github.com/ProFire/secretlabexercise.git"
         git_clone_depth = 0
-        buildspec = "/build/aws/buildspec.yml"
+        buildspec = "build/aws/buildspec.yml"
+
+        git_submodules_config {
+          fetch_submodules = true
+        }
     }
 
-    vpc_config {
-      security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
-      subnets = [ aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id ]
-      vpc_id = aws_vpc.secretlabexercise-vpc.id
-    }
+    # vpc_config {
+    #   security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
+    #   subnets = [ aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id ]
+    #   vpc_id = aws_vpc.secretlabexercise-vpc.id
+    # }
 }
 
 resource "aws_codepipeline" "secretlabexercise-codepipeline" {
@@ -368,6 +372,7 @@ resource "aws_codepipeline" "secretlabexercise-codepipeline" {
 resource "aws_s3_bucket" "secretlabexercise-s3-bucket-codepipeline" {
     bucket = "secretlabexercise-s3-bucket-codepipeline"
     acl = "private"
+    force_destroy = true
 }
 
 # Application blocks
