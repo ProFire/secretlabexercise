@@ -1,5 +1,8 @@
 FROM php:8.0.11-apache-bullseye
 
+# Update OS for security reasons
+RUN apt update && apt full-upgrade -y && apt autoremove -y
+
 # Set environment variables
 ARG RDS_ENDPOINT=""
 ENV RDS_ENDPOINT=$RDS_ENDPOINT
