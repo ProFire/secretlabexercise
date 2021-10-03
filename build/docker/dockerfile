@@ -27,7 +27,7 @@ RUN apt install -y \
     git \
     zip \
     unzip \
-    mysql-server
+    mariadb-server
 RUN docker-php-ext-install mysqli pdo pdo_mysql opcache
 
 # Import Laravel Application
