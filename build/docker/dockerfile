@@ -59,6 +59,7 @@ RUN chown -R www-data:www-data ./
 RUN chmod -R 755 ./
 
 # CICD Testing
+RUN pecl install xdebug && docker-php-ext-enable xdebug
 RUN php artisan test --coverage-html public/codecoverage/
     
 EXPOSE 80
