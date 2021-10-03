@@ -1,64 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Secret Lab exercise
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This repository is done for Secret Lab's coding interview.
 
-## About Laravel
+## Pre-requisites to installation
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- You must have an AWS User Account with Access Key and Secret
+- Have AWS CLI installed on your machine
+- Have AWS configure done with your ACCESS KEY and SECRET on your machine
+- Have Terraform installed
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Navigate to the ./build/terraform folder and run the following command to set up your AWS infrastructure and CICD pipeline
 
-## Learning Laravel
+```bash
+terraform apply
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Go to your AWS console and navigate to your developer tools to setup your _code star connection_. You need connect your Github Account to your code star in order to run this repository.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Then go to your _CodePipeline_ and do a "__release change__" on "__secretlabexercise-codepipeline__" pipeline.
 
-## Laravel Sponsors
+## AWS Infrastructure
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+- 2 public subnets in 2 Availability Zones for High Availability deployment
+- 2 private subnets in 2 Availability Zones for High Availability deployment
+- RDS is deployed in private subnet for security
+- Laravel is deployed in Fargate in public subnet, behind a [load balancer](http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/)
+- CICD pipeline is automatically triggered upon git push
 
-### Premium Partners
+## Usage
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[CMS Max](https://www.cmsmax.com/)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
+### Get latest object
 
-## Contributing
+Syntax: `GET` /api/object/${arg1}
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### Parameters
+- `arg1` `string` The object name or the key
 
-## Code of Conduct
+#### Returns
+`json` The string or the json string if found. It will return 404 if the object is not found.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### Example:
+```bash
+curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/mykey'
+```
+- - - -
+### Add object
 
-## Security Vulnerabilities
+Syntax: `POST` /api/object
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+#### PostBody
+- `json` A list of key-value pairs to store. Multiple pairs allowed
 
-## License
+#### Returns
+`json` A success message
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#### Example:
+```bash
+curl --location --request POST 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object' \
+    --header 'Content-Type: text/plain' \
+    --data-raw '{"mykey":"value1","anotherKey":"{a:1,b:2}"}'
+```
+- - - -
+### List all objects
+
+Syntax: `GET` /api/object/get_all_records
+
+#### Returns
+`json` A complete list of records in database, including past entries
+
+#### Example:
+```bash
+curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/get_all_records'
+```
+
+## Shortcuts
+Due to circumstance, time, and cost constraints, the following shortcuts were taken and how in actual production I would have done differently:
+
+- I would done 3 or more git branches in an actual git for proper deployment cycle
+  - release/prod
+  - release/uat
+  - release/dev
+- I would have done feature branching that corresponds to JIRA or Trello tickets and do _Pull Request_ for code reviews, like:
+  - feature/ABC-1
+  - hotfix/XYZ-2
+- There is only 1 environment in AWS. Ideally, there should be 3, corresponding to the 3 release branches in git. I didn't do it for cost-savings since the 3 environments are identical.
+- There should be a terraform git repo and its own pipeline in AWS to ensure a more secure AWS account. It will also allow multiple DevOps to modify the git repo and deploy with S3 state storage and DynamoDB for state-locking. See: [https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started](https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started)
+- The password for database should not have been stored in terraform script or in the codes. It should have been stored in [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) or [AWS Parameter Store instead](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html).
+- The ECS cluster should have auto-scaling feature so that it can scale the app with varying traffic loads.
+- The RDS database should have been [Aurora Serverless v1](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and have CloudWatch schedule a regular ping of about 5 minutes. This way, the database can scale with the ECS cluster without Aurora going through cold start.
+- The CICD deployment should be Blue/Green instead.
+- No VPN and VPN gateway was created. I would have either used [OpenVPN](https://shurn.me/blog/2016-12-19/creating-a-hybrid-data-centre-with-openvpn) or [WireGuard](https://www.wireguard.com/) so that the private subnet is accessible from corporate network.
+- No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
