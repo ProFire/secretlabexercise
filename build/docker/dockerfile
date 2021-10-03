@@ -14,8 +14,6 @@ ARG RDS_USERNAME=""
 ENV RDS_USERNAME=$RDS_USERNAME
 ARG RDS_PASSWORD=""
 ENV RDS_PASSWORD=$RDS_PASSWORD
-ARG RDS_DATABASE="dss"
-ENV RDS_DATABASE=$RDS_DATABASE
 ARG RDS_PORT=3306
 ENV RDS_PORT=$RDS_PORT
 
@@ -28,7 +26,8 @@ RUN apt install -y \
     wget \
     git \
     zip \
-    unzip
+    unzip \
+    mysql-server
 RUN docker-php-ext-install mysqli pdo pdo_mysql opcache
 
 # Import Laravel Application
@@ -48,7 +47,8 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Run DB migration
-RUN php artisan db:create secretlabexercise
+# RUN php artisan db:create secretlabexercise
+RUN mysql -u ${RDS_USERNAME} -p${RDS_PASSWORD} -h ${RDS_ENDPOINT} -P ${RDS_PORT} -e "CREATE DATABASE IF NOT EXISTS secretlabexercise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 RUN php artisan migrate --force
 
 # Don't allow sensitive files
