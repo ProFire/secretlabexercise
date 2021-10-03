@@ -47,7 +47,6 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Run DB migration
-# RUN php artisan db:create secretlabexercise
 RUN mysql -u ${RDS_USERNAME} -p${RDS_PASSWORD} -h ${RDS_ENDPOINT} -P ${RDS_PORT} -e "CREATE DATABASE IF NOT EXISTS secretlabexercise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 RUN php artisan migrate --force
 
