@@ -331,11 +331,11 @@ resource "aws_codebuild_project" "secretlabexercise-codebuild" {
         }
     }
 
-    # vpc_config {
-    #   security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
-    #   subnets = [ aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id ]
-    #   vpc_id = aws_vpc.secretlabexercise-vpc.id
-    # }
+    vpc_config {
+      security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
+      subnets = [ aws_subnet.secretlabexercise-subnet-private-a.id, aws_subnet.secretlabexercise-subnet-private-b.id ]
+      vpc_id = aws_vpc.secretlabexercise-vpc.id
+    }
 }
 
 resource "aws_codepipeline" "secretlabexercise-codepipeline" {
