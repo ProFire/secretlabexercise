@@ -14,17 +14,18 @@ provider "aws" {
 
 # VPC and Related
 
-resource "aws_vpc" "secretlabexercise-vpc" { 
+resource "aws_vpc" "secretlabexercise-vpc" {
     cidr_block = "10.0.0.0/16"
+    enable_dns_hostnames = true
     
     tags = {
         Name = "secretlabexercise-vpc"
     }
 }
 
-resource "aws_subnet" "secretlabexercise-subnet-public-a" { 
+resource "aws_subnet" "secretlabexercise-subnet-public-a" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
-    cidr_block = "10.0.0.0/24"
+    cidr_block = "10.0.1.0/24"
     availability_zone = "ap-southeast-1a"
 
     tags = {
@@ -32,9 +33,9 @@ resource "aws_subnet" "secretlabexercise-subnet-public-a" {
     }
 }
 
-resource "aws_subnet" "secretlabexercise-subnet-public-b" { 
+resource "aws_subnet" "secretlabexercise-subnet-public-b" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
-    cidr_block = "10.0.1.0/24"
+    cidr_block = "10.0.2.0/24"
     availability_zone = "ap-southeast-1b"
 
     tags = {
@@ -42,9 +43,9 @@ resource "aws_subnet" "secretlabexercise-subnet-public-b" {
     }
 }
 
-resource "aws_subnet" "secretlabexercise-subnet-private-a" { 
+resource "aws_subnet" "secretlabexercise-subnet-private-a" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
-    cidr_block = "10.0.2.0/24"
+    cidr_block = "10.0.3.0/24"
     availability_zone = "ap-southeast-1a"
 
     tags = {
@@ -52,9 +53,9 @@ resource "aws_subnet" "secretlabexercise-subnet-private-a" {
     }
 }
 
-resource "aws_subnet" "secretlabexercise-subnet-private-b" { 
+resource "aws_subnet" "secretlabexercise-subnet-private-b" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
-    cidr_block = "10.0.3.0/24"
+    cidr_block = "10.0.4.0/24"
     availability_zone = "ap-southeast-1b"
 
     tags = {
@@ -62,7 +63,7 @@ resource "aws_subnet" "secretlabexercise-subnet-private-b" {
     }
 }
 
-resource "aws_internet_gateway" "secretlabexercise-internet-gateway" { 
+resource "aws_internet_gateway" "secretlabexercise-internet-gateway" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
 
     tags = {
@@ -70,7 +71,31 @@ resource "aws_internet_gateway" "secretlabexercise-internet-gateway" {
     }
 }
 
-resource "aws_route_table" "secretlabexercise-route-table-public" { 
+resource "aws_route_table" "secretlabexercise-route-table-public" {
+        vpc_id = aws_vpc.secretlabexercise-vpc.id
+
+        tags = {
+            Name = "secretlabexercise-route-table-public"
+        }
+}
+
+resource "aws_route" "secretlabexercise-route-public" {
+    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
+    destination_cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.secretlabexercise-internet-gateway.id
+}
+
+resource "aws_route_table_association" "secretlabexercise-route-table-association-public-a" {
+    subnet_id = aws_subnet.secretlabexercise-subnet-public-a.id
+    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
+}
+
+resource "aws_route_table_association" "secretlabexercise-route-table-association-public-b" {
+    subnet_id = aws_subnet.secretlabexercise-subnet-public-b.id
+    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
+}
+
+resource "aws_route_table" "secretlabexercise-route-table-private" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
 
     tags = {
@@ -78,20 +103,31 @@ resource "aws_route_table" "secretlabexercise-route-table-public" {
     }
 }
 
-resource "aws_route" "secretlabexercise-route-public" { 
-    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
+resource "aws_route" "secretlabexercise-route-nat-gateway" {
+    route_table_id = aws_route_table.secretlabexercise-route-table-private.id
     destination_cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.secretlabexercise-internet-gateway.id
+    nat_gateway_id = aws_nat_gateway.secretlabexercise-nat-gateway.id
 }
 
-resource "aws_route_table_association" "secretlabexercise-route-table-association-public-a" { 
+resource "aws_route_table_association" "secretlabexercise-route-table-association-private-a" {
+    subnet_id = aws_subnet.secretlabexercise-subnet-private-a.id
+    route_table_id = aws_route_table.secretlabexercise-route-table-private.id
+}
+
+resource "aws_route_table_association" "secretlabexercise-route-table-association-private-b" {
+    subnet_id = aws_subnet.secretlabexercise-subnet-private-b.id
+    route_table_id = aws_route_table.secretlabexercise-route-table-private.id
+}
+
+resource "aws_eip" "secretlabexercise-eip" {
+    vpc = true
+    depends_on = [aws_internet_gateway.secretlabexercise-internet-gateway]
+}
+
+resource "aws_nat_gateway" "secretlabexercise-nat-gateway" {
+    allocation_id = aws_eip.secretlabexercise-eip.id
     subnet_id = aws_subnet.secretlabexercise-subnet-public-a.id
-    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
-}
-
-resource "aws_route_table_association" "secretlabexercise-route-table-association-public-b" { 
-    subnet_id = aws_subnet.secretlabexercise-subnet-public-b.id
-    route_table_id = aws_route_table.secretlabexercise-route-table-public.id
+    depends_on = [aws_internet_gateway.secretlabexercise-internet-gateway]
 }
 
 # Roles and Policies
@@ -459,6 +495,7 @@ resource "aws_ecs_service" "secretlabexercise-ecs-service" {
     network_configuration {
       subnets = [aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id]
       security_groups = [aws_security_group.secretlabexercise-security-group.id]
+      assign_public_ip = true
     }
 
     load_balancer {
@@ -509,6 +546,8 @@ resource "aws_db_instance" "secretlabexercise-db-instance" {
     username = "secretlabexercise"
     password = "$uper$3cret"
     db_subnet_group_name = aws_db_subnet_group.secretlabexercise-db-subnet-group.name
+    skip_final_snapshot = true
+    final_snapshot_identifier = "secretlabfinalsnapshot"
 }
 
 resource "aws_db_subnet_group" "secretlabexercise-db-subnet-group" {
