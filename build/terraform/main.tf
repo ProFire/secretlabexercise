@@ -23,6 +23,24 @@ resource "aws_vpc" "secretlabexercise-vpc" {
     }
 }
 
+resource "aws_default_security_group" "secretlabexercise-default-security-group" {
+  vpc_id = aws_vpc.secretlabexercise-vpc.id
+
+    ingress {
+        protocol  = -1
+        self      = true
+        from_port = 0
+        to_port   = 0
+    }
+
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }   
+}
+
 resource "aws_subnet" "secretlabexercise-subnet-public-a" {
     vpc_id = aws_vpc.secretlabexercise-vpc.id
     cidr_block = "10.0.1.0/24"
@@ -332,9 +350,12 @@ resource "aws_codebuild_project" "secretlabexercise-codebuild" {
     }
 
     vpc_config {
-      security_group_ids = [ aws_security_group.secretlabexercise-security-group.id ]
-      subnets = [ aws_subnet.secretlabexercise-subnet-private-a.id, aws_subnet.secretlabexercise-subnet-private-b.id ]
-      vpc_id = aws_vpc.secretlabexercise-vpc.id
+        security_group_ids = [ 
+            aws_security_group.secretlabexercise-security-group.id,
+            aws_default_security_group.secretlabexercise-default-security-group.id
+        ]
+        subnets = [ aws_subnet.secretlabexercise-subnet-private-a.id, aws_subnet.secretlabexercise-subnet-private-b.id ]
+        vpc_id = aws_vpc.secretlabexercise-vpc.id
     }
 }
 
@@ -493,15 +514,18 @@ resource "aws_ecs_service" "secretlabexercise-ecs-service" {
     ]
 
     network_configuration {
-      subnets = [aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id]
-      security_groups = [aws_security_group.secretlabexercise-security-group.id]
-      assign_public_ip = true
+        subnets = [aws_subnet.secretlabexercise-subnet-public-a.id, aws_subnet.secretlabexercise-subnet-public-b.id]
+        security_groups = [
+            aws_security_group.secretlabexercise-security-group.id, 
+            aws_default_security_group.secretlabexercise-default-security-group.id
+        ]
+        assign_public_ip = true
     }
 
     load_balancer {
-      target_group_arn = aws_lb_target_group.secretlabexercise-lb-target-group.arn
-      container_name = "secretlabexercise-ecs-container-definitions"
-      container_port = 80
+        target_group_arn = aws_lb_target_group.secretlabexercise-lb-target-group.arn
+        container_name = "secretlabexercise-ecs-container-definitions"
+        container_port = 80
     }
 }
 
