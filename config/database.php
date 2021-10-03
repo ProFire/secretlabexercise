@@ -1,6 +1,32 @@
 <?php
-
+declare(strict_types=1);
 use Illuminate\Support\Str;
+
+/**
+ * Default Configuration
+ */
+$mysql = [
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '3306'),
+    'username' => env('DB_USERNAME', 'forge'),
+    'password' => env('DB_PASSWORD', ''),
+];
+
+/**
+ * AWS Configuration
+ */
+if (getenv("RDS_ENDPOINT") !== false) {
+    $mysql["host"] = getenv("RDS_ENDPOINT");
+}
+if (getenv("RDS_PORT") !== false) {
+    $mysql["port"] = getenv("RDS_PORT");
+}
+if (getenv("RDS_USERNAME") !== false) {
+    $mysql["username"] = getenv("RDS_USERNAME");
+}
+if (getenv("RDS_PASSWORD") !== false) {
+    $mysql["password"] = getenv("RDS_PASSWORD");
+}
 
 return [
 
@@ -46,11 +72,11 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
+            'host' => $mysql["host"],
+            'port' => $mysql["port"],
             'database' => env('DB_DATABASE', 'forge'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
+            'username' => $mysql["username"],
+            'password' => $mysql["password"],
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
