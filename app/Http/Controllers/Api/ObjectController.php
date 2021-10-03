@@ -39,7 +39,7 @@ class ObjectController extends Controller
                     'errors' => [
                         "Object not found",
                     ],
-                ])
+                ], 404)
             ;
         }
 
@@ -86,7 +86,7 @@ class ObjectController extends Controller
 
 
         return response()
-            ->json("")
+            ->json("Object[s] created")
         ;
     }
 
