@@ -33,17 +33,22 @@ Then go to your _CodePipeline_ and do a "__release change__" on "__secretlabexer
 
 ### Get latest object
 
-Syntax: `GET` /api/object/${arg1}
+Syntax: `GET` /api/object/${arg1}?timestamp=${arg2}
 
 #### Parameters
-- `arg1` `string` The object name or the key
+- `arg1` `string` `required` The object name or the key
+- `arg2` `string` `optional` The timestamp or the datetime to get the object on or before
 
 #### Returns
 `json` The string or the json string if found. It will return 404 if the object is not found.
 
-#### Example:
+#### Examples:
 ```bash
 curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/mykey'
+
+curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/mykey?timestamp=1633296600'
+
+curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/mykey?timestamp=2021-10-03 21:30:00'
 ```
 - - - -
 ### Add object
@@ -93,3 +98,4 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
 - The CICD deployment should be Blue/Green instead.
 - No VPN and VPN gateway was created. I would have either used [OpenVPN](https://shurn.me/blog/2016-12-19/creating-a-hybrid-data-centre-with-openvpn) or [WireGuard](https://www.wireguard.com/) so that the private subnet is accessible from corporate network.
 - No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
+- Normally, test isn't done on production environment, but on uat and development environment. But since I only created 1 environment, the test is done on production environment.

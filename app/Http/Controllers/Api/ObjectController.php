@@ -71,7 +71,8 @@ class ObjectController extends Controller
         // Get the input data
         // /*DEBUG*/ echo "<pre>"; print_r($request->getContent()); echo "</pre>";exit;
         $requestBody = json_decode($request->getContent(), true);
-        // /*DEBUG*/ print_r($requestBody);exit;
+        // /*DEBUG*/ print_r($requestBody);//exit;
+        // /*DEBUG*/ return response()->json(print_r($requestBody, true));
         
         foreach ($requestBody as $name => $value) {
             $item = new Item();
