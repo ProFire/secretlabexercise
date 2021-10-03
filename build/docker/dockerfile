@@ -48,7 +48,7 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
 # Run DB migration
 RUN mysql -u ${RDS_USERNAME} -p${RDS_PASSWORD} -h ${RDS_ENDPOINT} -P ${RDS_PORT} -e "CREATE DATABASE IF NOT EXISTS secretlabexercise CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-RUN mysql -u ${RDS_USERNAME} -p${RDS_PASSWORD} -h ${RDS_ENDPOINT} -P ${RDS_PORT} -e "CREATE DATABASE IF NOT EXISTS secretlabexercise-testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+RUN mysql -u ${RDS_USERNAME} -p${RDS_PASSWORD} -h ${RDS_ENDPOINT} -P ${RDS_PORT} -e "CREATE DATABASE IF NOT EXISTS `secretlabexercise-testing` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 RUN php artisan migrate --force
 
 # Don't allow sensitive files
@@ -57,6 +57,9 @@ RUN rm -rf ./build
 # Set File and Folder permissions, and ownership
 RUN chown -R www-data:www-data ./
 RUN chmod -R 755 ./
+
+# CICD Testing
+RUN php artisan test
     
 EXPOSE 80
 EXPOSE 443
