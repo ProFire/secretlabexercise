@@ -38,6 +38,14 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" &&
 # Install app libraries
 RUN composer install -o
 
+# Set Apache Configurations
+RUN a2enmod rewrite ssl headers deflate
+COPY ./build/aws/fargate.httpd.conf /etc/apache2/sites-available/fargate.httpd.conf
+RUN a2ensite fargate.httpd.conf && /etc/init.d/apache2 restart
+
+# Don't allow sensitive files
+RUN rm -rf /app/build
+
 # Set File and Folder permissions, and ownership
 RUN chown -R www-data:www-data ./
 RUN chmod -R 755 ./
