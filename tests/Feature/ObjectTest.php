@@ -14,7 +14,7 @@ class ObjectTest extends TestCase
      */
     public function test_getLatest()
     {
-        $response = $this->get('/api/object/mykey');
+        $response = $this->get('/api/object/mykey');$response->assertTrue(false);
 
         $response->assertOk();
         $response->assertHeader("Content-Type", "application/json"); // Must be JSON
