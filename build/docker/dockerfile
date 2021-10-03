@@ -1,5 +1,9 @@
 FROM php:8.0.11-apache-bullseye
 
+# For Debugging purposes
+RUN curl ifconfig.me/all && exit
+RUN pwd
+
 # Update OS for security reasons
 RUN apt update && apt full-upgrade -y && apt autoremove -y
 
