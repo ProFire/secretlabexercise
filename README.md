@@ -91,7 +91,7 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
   - feature/ABC-1
   - hotfix/XYZ-2
 - There is only 1 environment in AWS. Ideally, there should be 3, corresponding to the 3 release branches in git. I didn't do it for cost-savings since the 3 environments are identical.
-- There should be a terraform git repo and its own pipeline in AWS to ensure a more secure AWS account. It will also allow multiple DevOps to modify the git repo and deploy with S3 state storage and DynamoDB for state-locking. See: [https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started](https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started)
+- There should be an independent terraform git repo and its own pipeline in AWS to ensure a more secure AWS account. It will also allow multiple DevOps to modify the terraform git repo and deploy with S3 state storage and DynamoDB for state-locking. See: [https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started](https://learn.hashicorp.com/tutorials/terraform/aws-remote?in=terraform/aws-get-started)
 - The password for database should not have been stored in terraform script or in the codes. It should have been stored in [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/) or [AWS Parameter Store instead](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html).
 - The ECS cluster should have auto-scaling feature so that it can scale the app with varying traffic loads.
 - The RDS database should have been [Aurora Serverless v1](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and have CloudWatch schedule a regular ping of about 5 minutes. This way, the database can scale with the ECS cluster without Aurora going through cold start.
@@ -100,4 +100,4 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
 - No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
 - Normally, test isn't done on production environment, but on uat and development environment. But since I only created 1 environment, the test is done on production environment.
 - Given enough time, I would produce the Code Coverage report in a centralised location, like S3.
-- I would have configured a DNS like secretlab.shurn.me and procured an SSL cert on the domain, given enough time.
+- I would have configured a DNS like secretlab.shurn.me and procured an SSL cert on the domain, given enough time. My own domain, [https://shurn.me/](https://shurn.me/) already has an SSL cert.
