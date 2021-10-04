@@ -100,3 +100,4 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
 - No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
 - Normally, test isn't done on production environment, but on uat and development environment. But since I only created 1 environment, the test is done on production environment.
 - Given enough time, I would produce the Code Coverage report in a centralised location, like S3.
+- I would have configured a DNS like secretlab.shurn.me and procured an SSL cert on the domain, given enough time.
