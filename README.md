@@ -96,7 +96,7 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
 - The ECS cluster should have auto-scaling feature so that it can scale the app with varying traffic loads.
 - The RDS database should have been [Aurora Serverless v1](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and have CloudWatch schedule a regular ping of about 5 minutes. This way, the database can scale with the ECS cluster without Aurora going through cold start.
 - The CICD deployment should be Blue/Green instead.
-- No VPN and VPN gateway was created. I would have either used [OpenVPN](https://shurn.me/blog/2016-12-19/creating-a-hybrid-data-centre-with-openvpn) or [WireGuard](https://www.wireguard.com/) so that the private subnet is accessible from corporate network.
+- No VPN and VPN gateway was created. I would have either used [OpenVPN](https://shurn.me/blog/2016-12-19/creating-a-hybrid-data-centre-with-openvpn) or [WireGuard](https://www.wireguard.com/) so that the private subnet is accessible from corporate network. That also means the RDS is not accessible unless there is a VPN setup or there is an EC2 instance in Public Subnet to SSH/RDP into.
 - No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
 - Normally, test isn't done on production environment, but on uat and development environment. But since I only created 1 environment, the test is done on production environment.
 - Given enough time, I would produce the Code Coverage report in a centralised location, like S3.
