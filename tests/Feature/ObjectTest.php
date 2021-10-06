@@ -20,6 +20,16 @@ class ObjectTest extends TestCase
         $response->assertHeader("Content-Type", "application/json"); // Must be JSON
         $response->assertSee("value2"); // Latest value
         $response->assertDontSee("value1"); // Earlier value shouldn't show up
+
+        $response = $this->get('/api/object/anotherkey');
+
+        $response->assertOk();
+        $response->assertHeader("Content-Type", "application/json"); // Must be JSON
+        $response->assertJson([
+            "a" => 1,
+            "b" => 2,
+            "c" => 3,
+        ]);
     }
 
     /**
@@ -77,11 +87,11 @@ class ObjectTest extends TestCase
     public function test_postObject()
     {
         // Initial database count
-        $this->assertDatabaseCount('items', 2);
+        $this->assertDatabaseCount('items', 3);
 
         $response = $this->postJson('/api/object/', [
             "mykey" => "value3",
-            "anotherKey" => "{a:1,b:2}",
+            "anotherKey" => '{"a":1,"b":2}',
         ]);
 
         $response->assertOk();
@@ -89,7 +99,7 @@ class ObjectTest extends TestCase
         $response->assertSee('Object[s] created', false); // Generic Message
         
         // New database count
-        $this->assertDatabaseCount('items', 4);
+        $this->assertDatabaseCount('items', 5);
     }
 
     

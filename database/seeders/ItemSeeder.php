@@ -27,5 +27,11 @@ class ItemSeeder extends Seeder
             "created_at" => Chronos::parse("2021-01-01 01:00:00"),
             "updated_at" => Chronos::parse("2021-01-01 01:00:00"),
         ]);
+        DB::table('items')->insert([
+            "name" => "anotherkey",
+            "value" => '{"a":1,"b":2,"c":3}',
+            "created_at" => Chronos::parse("2021-01-01 00:30:00"),
+            "updated_at" => Chronos::parse("2021-01-01 00:30:00"),
+        ]);
     }
 }
