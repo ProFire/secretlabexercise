@@ -61,6 +61,7 @@ RUN chmod -R 755 ./
 # CICD Testing
 RUN php -i | grep php.ini
 RUN pecl install pcov && docker-php-ext-enable pcov
+RUN echo "extension=pcov.so" > //usr/local/etc/php/php.ini
 RUN php artisan test --coverage-html public/codecoverage/
     
 EXPOSE 80
