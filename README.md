@@ -80,6 +80,17 @@ Syntax: `GET` /api/object/get_all_records
 curl --location --request GET 'http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/api/object/get_all_records'
 ```
 
+## Testing
+You are recommended to use [pcov](https://pecl.php.net/package/pcov) to generate CodeCoverage report. The CICD pipeline is using pcov. The installation instructions for pcov is at [https://github.com/krakjoe/pcov/blob/develop/INSTALL.md](https://github.com/krakjoe/pcov/blob/develop/INSTALL.md).
+
+To run your test with code coverage, run the following command:
+```bash
+php artisan test --coverage-html public/codecoverage/
+```
+Your code coverage report will be generated in public/codecoverage folder.
+
+The code coverage report in production is located at [http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/](http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/)
+
 ## Shortcuts
 Due to circumstance, time, and cost constraints, the following shortcuts were taken and how in actual production I would have done differently:
 
@@ -99,5 +110,5 @@ Due to circumstance, time, and cost constraints, the following shortcuts were ta
 - No VPN and VPN gateway was created. I would have either used [OpenVPN](https://shurn.me/blog/2016-12-19/creating-a-hybrid-data-centre-with-openvpn) or [WireGuard](https://www.wireguard.com/) so that the private subnet is accessible from corporate network. That also means the RDS is not accessible unless there is a VPN setup or there is an EC2 instance in Public Subnet to SSH/RDP into.
 - No redis cache was created to store PHP sessions, since the exercise requirement didn't require session storage and I wanted to save on cost. I would have created a [ElastiCache Redis Cluster](https://aws.amazon.com/elasticache/redis/) to store sessions, so that the PHP app is stateless.
 - Normally, test isn't done on production environment, but on uat and development environment. But since I only created 1 environment, the test is done on production environment.
-- The code coverage report should be in a centralised private location, like S3, not [http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/](http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/)
+- The code coverage report should be in a centralised private location, like [AWS S3](https://aws.amazon.com/s3/) or [AWS EFS](https://aws.amazon.com/efs/), not [http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/](http://secretlabexercise-lb-1171822883.ap-southeast-1.elb.amazonaws.com/codecoverage/)
 - I would have configured a DNS like secretlab.shurn.me and procured an SSL cert on the domain, given enough time. My own domain, [https://shurn.me/](https://shurn.me/) already has an SSL cert.
