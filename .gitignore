@@ -19,3 +19,5 @@ yarn-error.log
 /build/terraform/.terraform.lock.hcl
 /build/terraform/terraform.tfstate
 /build/terraform/terraform.tfstate.backup
+
+/public/codecoverage
