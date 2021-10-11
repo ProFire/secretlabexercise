@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Object controller that interacts with the Item model
@@ -74,20 +75,52 @@ class ObjectController extends Controller
         // /*DEBUG*/ print_r($requestBody);//exit;
         // /*DEBUG*/ return response()->json(print_r($requestBody, true));
         
+        $loopCount = 0;
+        $successCount = 0;
+        $failureCount = 0;
+        $reasonArr = [];
         foreach ($requestBody as $name => $value) {
+            $loopCount++;
             $item = new Item();
 
             // Prepare for storage
-            $item->name = $name;
+            $item->name = trim($name);
             $item->value = $value;
+
+            // CHeck for empty name
+            $validationObj = Validator::make([
+                "name" => $item->name,
+                "value" => $item->value,
+            ], [
+                "name" => "required|max:100|alpha_num",
+                "value" => "required|max:100",
+            ]);
+            // /*DEBUG*/ print_r($validationObj->errors()->getMessages());exit;
+
+            // Fialure scenario
+            if ($validationObj->fails()) {
+                // Indicate error
+                $failureCount++;
+
+                $reasonArr[$loopCount] = $validationObj->errors()->getMessages();
+                
+                // Skip this first, continue with the rest
+                continue;
+            }
 
             // Save
             $item->save();
+            // Increment success count
+            $successCount++;
         }
 
 
         return response()
-            ->json("Object[s] created")
+            ->json([
+                "successCount" => $successCount,
+                "failureCount" => $failureCount,
+                "errorReasons" => $reasonArr,
+            ])
         ;
     }
 
